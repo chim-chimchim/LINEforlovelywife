@@ -404,7 +404,7 @@
         <small id="todayLabel"></small>
       </div>
       <label for="lineText">実際に送ろうとしている文章をそのまま貼ってください</label>
-      <textarea id="lineText" placeholder="例）さっきの言い方はちょっとキツくない？俺だって仕事でクタクタなんだけど。とりあえず落ち着いて話そうよ。"></textarea>
+      <textarea id="lineText" placeholder="例）さっきの言い方はちょっとキツくない？俺だって仕事でクタクタなんだけど。帰りに牛乳買ってきてくれる？"></textarea>
 
       <div style="margin-top:8px;">
         <label for="moodSelect">いまの妻のコンディション（雰囲気でOK）</label>
@@ -458,7 +458,7 @@
       <div id="resultArea">
         <div class="subtle">
           ここに診断結果が表示されます。<br>
-          「でも」「俺だって」「落ち着いて」はだいたい危険ワードです。
+          とくに「お願い＋行動要求」はかなり地雷寄りに見ます。
         </div>
       </div>
 
@@ -522,7 +522,6 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // ===== 日付＆localStorage管理 =====
     const KEY_DATE = "wifeBotDate";
     const KEY_PLAYS = "wifeBotPlays";
     const KEY_UNLIMITED = "wifeBotUnlimitedDate";
@@ -560,7 +559,6 @@
       const storedDate = localStorage.getItem(KEY_DATE);
 
       if (storedDate !== today) {
-        // 日付変わったらプレイ回数と無制限フラグをリセット
         localStorage.setItem(KEY_DATE, today);
         localStorage.setItem(KEY_PLAYS, "0");
         localStorage.removeItem(KEY_UNLIMITED);
@@ -615,7 +613,6 @@
       const unlimitedDate = localStorage.getItem(KEY_UNLIMITED);
       const today = getTodayString();
       if (unlimitedDate === today) {
-        // 無制限の日はカウントはそのままでもOK（統計だけ残したいなら増やしてもよい）
         const plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
         updatePlaysUI(plays);
         return;
@@ -648,10 +645,9 @@
       document.getElementById("supporterBadge").style.display = "inline-flex";
     }
 
-    // ===== 地雷度診断ロジック（ルールベース） =====
+    // ===== 地雷度診断（要求系をかなり厳しめに見る） =====
     function evaluateMessage(text, mood) {
       const original = text;
-      // 全角→半角変換はざっくり
       const normalized = original
         .replace(/！/g, "!")
         .replace(/？/g, "?")
@@ -682,7 +678,11 @@
         "普通は",
         "言ったよね",
         "言ったじゃん",
-        "何回同じこと"
+        "何回同じこと",
+        "やっといて",
+        "片付けといて",
+        "迎えに行って",
+        "送ってって"
       ];
 
       const warnPatterns = [
@@ -739,23 +739,75 @@
         }
       });
 
+      // ==== 行動要求の検出（ここをかなり厳しめ） ====
+      const requestRegexes = [
+        /てくれる[？?]?/g,
+        /てくれない[？?]?/g,
+        /てほしい[。？?！!]?/g,
+        /しといて/g,
+        /しといてくれる/g,
+        /やっといて/g,
+        /片付けといて/g,
+        /迎えに行って/g,
+        /迎えにきて/g,
+        /送ってって/g,
+        /お願い(だから)?/g,
+        /頼むよ?/g
+      ];
+
+      let requestHitCount = 0;
+      requestRegexes.forEach(re => {
+        const matches = original.match(re);
+        if (matches) {
+          requestHitCount += matches.length;
+        }
+      });
+
+      if (requestHitCount > 0) {
+        // 要求そのものに重めのペナルティ
+        score += requestHitCount * 2;
+
+        // 今・今日など、時間プレッシャー付き要求
+        if (original.includes("今") || original.includes("今日") || original.includes("すぐ")) {
+          score += 1;
+        }
+
+        // 「俺 / 僕」など自分都合アピールとセットの要求
+        if (original.includes("俺") || original.includes("オレ") || original.includes("僕")) {
+          score += 1;
+        }
+      }
+
+      // 疲れアピールとの組み合わせ
+      const tiredWords = ["疲れてる", "クタクタ", "しんどい", "大変なんだ"];
+      let tiredHit = false;
+      tiredWords.forEach(w => {
+        if (original.includes(w)) tiredHit = true;
+      });
+      if (tiredHit && requestHitCount > 0) {
+        score += 1; // 「俺もしんどい＋お願い」はさらに危険
+      }
+
+      // 句読点や !? の多さ
       const qCount = (normalized.match(/\?/g) || []).length;
       const exCount = (normalized.match(/!/g) || []).length;
       if (exCount >= 3) score += 1;
       if (qCount >= 3) score += 1;
 
+      // 妻のコンディション補正
       if (mood === "slightly-angry") score += 1;
       if (mood === "angry") score += 2;
 
+      // ==== レベル判定（全体的に少し厳しめ） ====
       let level, label, badgeClass, emoji;
-      if (hitDeadly || score >= 5) {
+      if (hitDeadly || score >= 4) {
         level = "即死級";
         label = "送信した瞬間、部屋の気温が2℃下がるやつです。";
         badgeClass = "badge-deadly";
         emoji = "💀";
-      } else if (score >= 3) {
+      } else if (score >= 2) {
         level = "危険";
-        label = "かなり火に油なので、一度深呼吸してから書き直しましょう。";
+        label = "かなり火に油なので、要求部分を一度ぜんぶ見直したほうがよさそうです。";
         badgeClass = "badge-danger";
         emoji = "🔥";
       } else if (score >= 1) {
@@ -772,20 +824,20 @@
 
       let moodComment = "";
       if (mood === "slightly-angry") {
-        moodComment = "（ちょいおこモードなので、クッション言葉を1〜2個足すと安心です。）";
+        moodComment = "（ちょいおこモードなので、要求を一段弱く言い換えるか、別のタイミングに回すと安心です。）";
       } else if (mood === "angry") {
-        moodComment = "（ガチおこモードです。LINEより先に行動と家事で謝罪を見せるほうが安全かも。）";
+        moodComment = "（ガチおこモードです。今このタイミングで何かを「頼む」のは、基本的に全部危険寄りです。）";
       }
 
       let suggest;
       if (level === "即死級") {
-        suggest = "一度全部消して、『まずは本当にごめん』だけ送るか、今日は送らない選択肢もありです。";
+        suggest = "一度全部消して、『まずは本当にごめん』だけ送るか、今日は送らない選択肢もありです。要求は明日以降に。";
       } else if (level === "危険") {
-        suggest = "「でも」「俺だって」あたりを削って、最初に謝罪・最後に感謝の一文を置いてみて。";
+        suggest = "「お願い」「〜してくれる？」の部分をいったん全部削って、労いと謝罪だけのメッセージにしてみてください。";
       } else if (level === "やや危険") {
-        suggest = "言い分を3割カットして、『どう感じた？』と気持ちをたずねる一文を足すと印象が柔らかくなります。";
+        suggest = "要求の量を3割カットして、『今できそう？無理なら別の日でも大丈夫』のような逃げ道を一文足すとだいぶマイルドになります。";
       } else {
-        suggest = "この文面ならOK寄り。スタンプや絵文字を1つ足して、柔らかさを出してあげるのも良さそうです。";
+        suggest = "この文面ならOK寄り。もし何か頼むなら、『いつもありがとう。余裕があるときでいいから〜』とクッションを足して送るとより安全です。";
       }
 
       return { level, label, badgeClass, emoji, moodComment, suggest };
@@ -828,7 +880,6 @@
       return area.innerText.trim().replace(/\s+/g, " ");
     }
 
-    // ===== イベント紐付け =====
     document.addEventListener("DOMContentLoaded", () => {
       initDailyState();
 
@@ -862,7 +913,7 @@
       });
 
       document.getElementById("sampleButton").addEventListener("click", () => {
-        const sample = "さっきの言い方はちょっとキツくない？俺だって毎日仕事でクタクタなんだけど。とりあえず落ち着いて話そうよ。";
+        const sample = "さっきの言い方はちょっとキツくない？俺だって毎日仕事でクタクタなんだけど。帰りに牛乳買ってきてくれる？";
         document.getElementById("lineText").value = sample;
         showToast("サンプル文を入れました。診断してみてください。");
       });
