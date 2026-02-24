@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>妻LINE 地雷チェッカー Lite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --accent: #ff6b6b;
+      --accent-soft: #ffe3e3;
+      --safe: #2ecc71;
+      --warn: #f1c40f;
+      --danger: #e67e22;
+      --deadly: #e74c3c;
+      --text-main: #333333;
+      --text-muted: #666666;
+      --border-soft: #e0e0e6;
+      --shadow-soft: 0 8px 20px rgba(0,0,0,0.06);
+      --radius-lg: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #ffe9f0, #f5f5f7 60%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffffcc;
+      border-radius: 24px;
+      padding: 18px 16px 24px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    header h1 span.logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ff9a9e, #ff6b6b);
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 6px 0 0;
+    }
+
+    .supporter-badge {
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: #fff5d9;
+      color: #a36b00;
+      border: 1px solid #ffe0a3;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 12px 12px 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+      border: 1px solid var(--border-soft);
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .card-title small {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      resize: vertical;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border-soft);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    textarea:focus {
+      border-color: #ff9a9e;
+      box-shadow: 0 0 0 1px #ff9a9e33;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.85rem;
+      outline: none;
+      background: #fafafa;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff9a9e, #ff6b6b);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(255,107,107,0.35);
+      flex: 1;
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 5px rgba(255,107,107,0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border-soft);
+      font-weight: 500;
+      padding-inline: 12px;
+    }
+
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .plays-info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .plays-info span.highlight {
+      font-weight: 600;
+      color: #ff6b6b;
+    }
+
+    .badge {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-safe    { background:#e7f7ee; color:#1d8547; }
+    .badge-warn    { background:#fff7d6; color:#9c7a02; }
+    .badge-danger  { background:#ffe3d3; color:#a04f13; }
+    .badge-deadly  { background:#ffe1e1; color:#a4161a; }
+
+    .result-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .result-main span.level-text {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .result-comment {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .result-suggest {
+      font-size: 0.85rem;
+      color: #444;
+    }
+
+    .subtle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .limit-overlay {
+      background: var(--accent-soft);
+      border-radius: var(--radius-lg);
+      padding: 10px 10px 12px;
+      border: 1px dashed #ff9a9e;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .limit-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .limit-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-outline-accent {
+      border: 1px solid #ff9a9e;
+      background: #fff;
+      color: #ff3b5c;
+      flex: 1;
+    }
+
+    .btn-muted {
+      border: 1px solid var(--border-soft);
+      background: #fafafa;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .share-row {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-x {
+      background: #000;
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-copy {
+      background: #f0f0f3;
+      color: #333;
+      flex: 1;
+    }
+
+    .support-card p {
+      margin: 4px 0;
+      font-size: 0.85rem;
+    }
+
+    .support-buttons {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .support-buttons a {
+      text-decoration: none;
+    }
+
+    .btn-support {
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      border: 1px solid #ffd3e0;
+      background: #fff7fb;
+      color: #c54a7c;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .debug-section {
+      margin-top: 6px;
+      border-top: 1px dashed #eee;
+      padding-top: 6px;
+    }
+
+    .debug-section summary {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 50;
+    }
+
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 400px) {
+      .card { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>
+        <span class="logo">💣</span>
+        妻LINE 地雷チェッカー Lite
+      </h1>
+      <p>送る前に、ここで一回だけ爆発させておこう。</p>
+      <div id="supporterBadge" class="supporter-badge" style="display:none;">
+        <span>✨</span> サポーターさん、いつもありがとうございます。
+      </div>
+    </header>
+
+    <!-- 入力＆診断 -->
+    <section class="card">
+      <div class="card-title">
+        <span>1. 妻へのLINEを自由に入力</span>
+        <small id="todayLabel"></small>
+      </div>
+      <label for="lineText">実際に送ろうとしている文章をそのまま貼ってください</label>
+      <textarea id="lineText" placeholder="例）さっきの言い方はちょっとキツくない？俺だって仕事でクタクタなんだけど。とりあえず落ち着いて話そうよ。"></textarea>
+
+      <div style="margin-top:8px;">
+        <label for="moodSelect">いまの妻のコンディション（雰囲気でOK）</label>
+        <select id="moodSelect">
+          <option value="normal">ふつう</option>
+          <option value="slightly-angry">ちょいおこ</option>
+          <option value="angry">ガチおこ（ハードモード）</option>
+        </select>
+      </div>
+
+      <div class="row" style="margin-top:9px;">
+        <button class="btn btn-primary" id="checkButton">
+          🔍 地雷度を診断する
+        </button>
+        <button class="btn btn-ghost btn-small" id="sampleButton">
+          サンプル文を入れる
+        </button>
+      </div>
+
+      <div class="plays-info">
+        <span>本日の無料診断：あと <span id="playsLeft" class="highlight">3</span> 回</span>
+        <span id="unlimitedStatus"></span>
+      </div>
+
+      <div id="limitBlock" class="limit-overlay" style="display:none;">
+        <div class="limit-title">
+          🚧 本日の無料診断は3回までです
+        </div>
+        <div>100円で今日だけ無制限診断を解放できます（プロトタイプのためダミー表示です）。</div>
+        <div class="limit-actions">
+          <a class="btn btn-outline-accent" id="dummyPaymentLink" href="#">
+            💳 100円で今日だけ無制限にする
+          </a>
+          <button class="btn btn-muted btn-small" id="limitCloseButton">
+            OK（今日はこれでやめる）
+          </button>
+        </div>
+        <div class="subtle" style="margin-top:6px;">
+          ※ 本番ではStripe Payment Linksなどの決済ページに飛ばし、<br>
+          成功後に <code>?payment=success</code> を付けてこのページに戻す想定です。
+        </div>
+      </div>
+    </section>
+
+    <!-- 結果 -->
+    <section class="card">
+      <div class="card-title">
+        <span>2. 診断結果</span>
+        <small>※ネタ＆自戒ツールです</small>
+      </div>
+      <div id="resultArea">
+        <div class="subtle">
+          ここに診断結果が表示されます。<br>
+          「でも」「俺だって」「落ち着いて」はだいたい危険ワードです。
+        </div>
+      </div>
+
+      <div class="share-row">
+        <button class="btn btn-x btn-small" id="shareXButton">
+          Xで結果を自慢する
+        </button>
+        <button class="btn btn-copy btn-small" id="copySummaryButton">
+          結果をコピー
+        </button>
+      </div>
+    </section>
+
+    <!-- 投げ銭 -->
+    <section class="card support-card">
+      <div class="card-title">
+        <span>3. 開発者を応援する（任意投げ銭）</span>
+      </div>
+      <p>このツールでちょっとでも笑えた・役に立ったと思ったら、コーヒー1杯分だけ投げ銭してもらえると喜びます☕️</p>
+      <div class="support-buttons">
+        <a href="#" target="_blank" rel="noopener noreferrer">
+          <div class="btn-support">100円で応援する</div>
+        </a>
+        <a href="#" target="_blank" rel="noopener noreferrer">
+          <div class="btn-support">300円で応援する</div>
+        </a>
+        <a href="#" target="_blank" rel="noopener noreferrer">
+          <div class="btn-support">500円で全力応援する</div>
+        </a>
+      </div>
+      <p class="subtle">
+        ※ 今はダミーリンクです。本番では note / PayPal / Stripe Payment Link などに差し替えます。<br>
+        ※ 投げ銭しても判定ロジックは一切変わりません。純粋な応援だけです。
+      </p>
+
+      <div class="debug-section">
+        <details>
+          <summary>デバッグ／将来の決済連携用メモ</summary>
+          <p class="subtle">
+            決済サービスからの戻りURLを<br>
+            <code>?payment=success</code> や <code>?tip=done</code> を付けてこのページに戻すと、<br>
+            当日の無制限フラグ／サポーターフラグを立てる想定です。
+          </p>
+          <div class="row">
+            <button class="btn btn-muted btn-small" id="debugUnlockButton">
+              （テスト用）無制限フラグをON
+            </button>
+            <button class="btn btn-muted btn-small" id="debugTipButton">
+              （テスト用）サポーターフラグをON
+            </button>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      ※ 実際の夫婦の会話では、このツールより相手の気持ちのほうが大事です🤝
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ===== 日付＆localStorage管理 =====
+    const KEY_DATE = "wifeBotDate";
+    const KEY_PLAYS = "wifeBotPlays";
+    const KEY_UNLIMITED = "wifeBotUnlimitedDate";
+    const KEY_SUPPORTER = "wifeBotSupporter";
+
+    function getTodayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    }
+
+    function parseQuery() {
+      const params = {};
+      const q = window.location.search.substring(1);
+      if (!q) return params;
+      q.split("&").forEach(pair => {
+        const [key, value] = pair.split("=");
+        if (!key) return;
+        params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+      });
+      return params;
+    }
+
+    function initDailyState() {
+      const today = getTodayString();
+      const storedDate = localStorage.getItem(KEY_DATE);
+
+      if (storedDate !== today) {
+        // 日付変わったらプレイ回数と無制限フラグをリセット
+        localStorage.setItem(KEY_DATE, today);
+        localStorage.setItem(KEY_PLAYS, "0");
+        localStorage.removeItem(KEY_UNLIMITED);
+      }
+
+      const plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
+      updatePlaysUI(plays);
+      updateUnlimitedUI();
+
+      const supporter = localStorage.getItem(KEY_SUPPORTER) === "true";
+      if (supporter) {
+        document.getElementById("supporterBadge").style.display = "inline-flex";
+      }
+
+      document.getElementById("todayLabel").textContent = `本日：${today}`;
+    }
+
+    function updatePlaysUI(plays) {
+      const playsLeftEl = document.getElementById("playsLeft");
+      const unlimitedDate = localStorage.getItem(KEY_UNLIMITED);
+      const today = getTodayString();
+      const unlimitedToday = unlimitedDate === today;
+
+      if (unlimitedToday) {
+        playsLeftEl.textContent = "∞";
+      } else {
+        const left = Math.max(0, 3 - plays);
+        playsLeftEl.textContent = String(left);
+      }
+    }
+
+    function updateUnlimitedUI() {
+      const text = document.getElementById("unlimitedStatus");
+      const unlimitedDate = localStorage.getItem(KEY_UNLIMITED);
+      const today = getTodayString();
+      if (unlimitedDate === today) {
+        text.textContent = "今日は無制限診断が解放されています 🎉";
+      } else {
+        text.textContent = "※ 日付が変わると無料回数は自動でリセットされます。";
+      }
+    }
+
+    function canPlay() {
+      const unlimitedDate = localStorage.getItem(KEY_UNLIMITED);
+      const today = getTodayString();
+      if (unlimitedDate === today) return true;
+      const plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
+      return plays < 3;
+    }
+
+    function recordPlay() {
+      const unlimitedDate = localStorage.getItem(KEY_UNLIMITED);
+      const today = getTodayString();
+      if (unlimitedDate === today) {
+        // 無制限の日はカウントはそのままでもOK（統計だけ残したいなら増やしてもよい）
+        const plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
+        updatePlaysUI(plays);
+        return;
+      }
+      let plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
+      plays += 1;
+      localStorage.setItem(KEY_PLAYS, String(plays));
+      updatePlaysUI(plays);
+    }
+
+    function showLimitBlock() {
+      document.getElementById("limitBlock").style.display = "block";
+    }
+
+    function hideLimitBlock() {
+      document.getElementById("limitBlock").style.display = "none";
+    }
+
+    function unlockUnlimitedToday(message) {
+      const today = getTodayString();
+      localStorage.setItem(KEY_UNLIMITED, today);
+      updateUnlimitedUI();
+      const plays = parseInt(localStorage.getItem(KEY_PLAYS) || "0", 10);
+      updatePlaysUI(plays);
+      if (message) showToast(message);
+    }
+
+    function markSupporter() {
+      localStorage.setItem(KEY_SUPPORTER, "true");
+      document.getElementById("supporterBadge").style.display = "inline-flex";
+    }
+
+    // ===== 地雷度診断ロジック（ルールベース） =====
+    function evaluateMessage(text, mood) {
+      const original = text;
+      // 全角→半角変換はざっくり
+      const normalized = original
+        .replace(/！/g, "!")
+        .replace(/？/g, "?")
+        .toLowerCase();
+
+      const deadlyPatterns = [
+        "そんなに怒るほど",
+        "大げさ",
+        "ヒステリ",
+        "更年期",
+        "閉経",
+        "女って",
+        "だからお前は",
+        "専業主婦のくせに"
+      ];
+
+      const dangerPatterns = [
+        "落ち着いて",
+        "カルシウム",
+        "俺だって",
+        "俺も疲れてる",
+        "でもさ",
+        "たいしたこと",
+        "そんなことくらい",
+        "気にしすぎ",
+        "面倒くさい",
+        "めんどくさい",
+        "普通は",
+        "言ったよね",
+        "言ったじゃん",
+        "何回同じこと"
+      ];
+
+      const warnPatterns = [
+        "まぁいいじゃん",
+        "とりあえず",
+        "後でやる",
+        "今忙しい",
+        "忘れてた",
+        "そんなつもりじゃ",
+        "ごめんってば"
+      ];
+
+      const safePatterns = [
+        "ごめん",
+        "本当にごめん",
+        "ありがとう",
+        "助かってる",
+        "手伝う",
+        "任せて",
+        "いつもありがとう",
+        "聞かせて",
+        "話を聞く",
+        "気持ち",
+        "尊敬してる",
+        "感謝してる",
+        "無理しないで"
+      ];
+
+      let score = 0;
+      let hitDeadly = false;
+
+      deadlyPatterns.forEach(p => {
+        if (original.includes(p)) {
+          score += 4;
+          hitDeadly = true;
+        }
+      });
+
+      dangerPatterns.forEach(p => {
+        if (original.includes(p)) {
+          score += 2;
+        }
+      });
+
+      warnPatterns.forEach(p => {
+        if (original.includes(p)) {
+          score += 1;
+        }
+      });
+
+      safePatterns.forEach(p => {
+        if (original.includes(p)) {
+          score -= 1;
+        }
+      });
+
+      const qCount = (normalized.match(/\?/g) || []).length;
+      const exCount = (normalized.match(/!/g) || []).length;
+      if (exCount >= 3) score += 1;
+      if (qCount >= 3) score += 1;
+
+      if (mood === "slightly-angry") score += 1;
+      if (mood === "angry") score += 2;
+
+      let level, label, badgeClass, emoji;
+      if (hitDeadly || score >= 5) {
+        level = "即死級";
+        label = "送信した瞬間、部屋の気温が2℃下がるやつです。";
+        badgeClass = "badge-deadly";
+        emoji = "💀";
+      } else if (score >= 3) {
+        level = "危険";
+        label = "かなり火に油なので、一度深呼吸してから書き直しましょう。";
+        badgeClass = "badge-danger";
+        emoji = "🔥";
+      } else if (score >= 1) {
+        level = "やや危険";
+        label = "今のコンディション次第では普通に地雷です。";
+        badgeClass = "badge-warn";
+        emoji = "⚠️";
+      } else {
+        level = "安全寄り";
+        label = "少なくとも、この文面がトドメにはならなさそうです。";
+        badgeClass = "badge-safe";
+        emoji = "🕊️";
+      }
+
+      let moodComment = "";
+      if (mood === "slightly-angry") {
+        moodComment = "（ちょいおこモードなので、クッション言葉を1〜2個足すと安心です。）";
+      } else if (mood === "angry") {
+        moodComment = "（ガチおこモードです。LINEより先に行動と家事で謝罪を見せるほうが安全かも。）";
+      }
+
+      let suggest;
+      if (level === "即死級") {
+        suggest = "一度全部消して、『まずは本当にごめん』だけ送るか、今日は送らない選択肢もありです。";
+      } else if (level === "危険") {
+        suggest = "「でも」「俺だって」あたりを削って、最初に謝罪・最後に感謝の一文を置いてみて。";
+      } else if (level === "やや危険") {
+        suggest = "言い分を3割カットして、『どう感じた？』と気持ちをたずねる一文を足すと印象が柔らかくなります。";
+      } else {
+        suggest = "この文面ならOK寄り。スタンプや絵文字を1つ足して、柔らかさを出してあげるのも良さそうです。";
+      }
+
+      return { level, label, badgeClass, emoji, moodComment, suggest };
+    }
+
+    function renderResult(result) {
+      const container = document.getElementById("resultArea");
+      container.innerHTML = "";
+
+      const main = document.createElement("div");
+      main.className = "result-main";
+
+      const badge = document.createElement("span");
+      badge.className = "badge " + result.badgeClass;
+      badge.textContent = result.level;
+
+      const levelText = document.createElement("span");
+      levelText.className = "level-text";
+      levelText.textContent = result.emoji + " " + result.label;
+
+      main.appendChild(badge);
+      main.appendChild(levelText);
+
+      const comment = document.createElement("div");
+      comment.className = "result-comment";
+      comment.textContent = result.moodComment;
+
+      const suggest = document.createElement("div");
+      suggest.className = "result-suggest";
+      suggest.textContent = result.suggest;
+
+      container.appendChild(main);
+      if (result.moodComment) container.appendChild(comment);
+      container.appendChild(suggest);
+    }
+
+    function getResultSummaryForShare() {
+      const area = document.getElementById("resultArea");
+      if (!area.textContent.trim()) return null;
+      return area.innerText.trim().replace(/\s+/g, " ");
+    }
+
+    // ===== イベント紐付け =====
+    document.addEventListener("DOMContentLoaded", () => {
+      initDailyState();
+
+      const params = parseQuery();
+      if (params.payment === "success") {
+        unlockUnlimitedToday("決済完了とみなして、今日は無制限診断を解放しました。");
+      }
+      if (params.tip === "done") {
+        markSupporter();
+        showToast("投げ銭ありがとうございます！");
+      }
+
+      document.getElementById("checkButton").addEventListener("click", () => {
+        const text = document.getElementById("lineText").value.trim();
+        const mood = document.getElementById("moodSelect").value;
+
+        if (!text) {
+          showToast("まずは妻に送ろうとしている文章を入力してください。");
+          return;
+        }
+
+        if (!canPlay()) {
+          showLimitBlock();
+          return;
+        }
+
+        hideLimitBlock();
+        recordPlay();
+        const result = evaluateMessage(text, mood);
+        renderResult(result);
+      });
+
+      document.getElementById("sampleButton").addEventListener("click", () => {
+        const sample = "さっきの言い方はちょっとキツくない？俺だって毎日仕事でクタクタなんだけど。とりあえず落ち着いて話そうよ。";
+        document.getElementById("lineText").value = sample;
+        showToast("サンプル文を入れました。診断してみてください。");
+      });
+
+      document.getElementById("limitCloseButton").addEventListener("click", () => {
+        hideLimitBlock();
+      });
+
+      document.getElementById("dummyPaymentLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        showToast("本番ではここから決済ページへ遷移します。");
+      });
+
+      document.getElementById("shareXButton").addEventListener("click", () => {
+        const summary = getResultSummaryForShare();
+        if (!summary) {
+          showToast("まずは診断してからシェアしてください。");
+          return;
+        }
+        const text = "妻LINE地雷チェッカーで診断した結果：\n" +
+                     summary +
+                     "\n\n#妻LINE地雷チェッカー";
+        const url = window.location.href.split("?")[0];
+        const shareUrl = "https://x.com/intent/tweet?text=" +
+          encodeURIComponent(text) +
+          "&url=" +
+          encodeURIComponent(url);
+        window.open(shareUrl, "_blank");
+      });
+
+      document.getElementById("copySummaryButton").addEventListener("click", async () => {
+        const summary = getResultSummaryForShare();
+        if (!summary) {
+          showToast("まずは診断してからコピーしてください。");
+          return;
+        }
+        const text = "妻LINE地雷チェッカー 診断結果：\n" + summary;
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast("診断結果をコピーしました。");
+        } catch {
+          showToast("コピーに失敗しました。");
+        }
+      });
+
+      document.getElementById("debugUnlockButton").addEventListener("click", () => {
+        unlockUnlimitedToday("テスト用：今日は無制限診断になりました。");
+      });
+
+      document.getElementById("debugTipButton").addEventListener("click", () => {
+        markSupporter();
+        showToast("テスト用：サポーターフラグをONにしました。");
+      });
+    });
+  </script>
+</body>
+</html>
